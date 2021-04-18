@@ -1,0 +1,15 @@
+package giocoprogetto;
+
+
+public class GestoreCollisioni 
+{
+    public static boolean controllaCollisione(Giocatore nave, Alieno alieno)
+    {
+       return nave.getBordi().intersects(alieno.getBordi());
+    }
+
+    public static boolean CollisioneProiettile(Proiettile proiettile, Alieno alieno)
+    {
+        return proiettile.getBordi().intersects(alieno.getBordi());
+    }  
+}
