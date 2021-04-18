@@ -1,0 +1,17 @@
+package giocoprogetto;
+
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+
+
+public class CaricatoreImmagini
+{
+    BufferedImage image;
+    
+    public BufferedImage caricaImmagine(String posizione) throws IOException
+    {
+        image = ImageIO.read(getClass().getResource(posizione)); 
+        return image;
+    }
+}
