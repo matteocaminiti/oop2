@@ -1,0 +1,68 @@
+package giocoprogetto;
+
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+
+public class InvasioneAlieni extends Thread
+{
+    private int numero;
+    private int attesa;    
+    private boolean Invasione;       
+    private final int maxVel = 1;
+    private ArrayList<Alieno> Alieni;
+    BufferedImage img_alieno;
+    GiocoProgetto main;
+    Random rand;  
+    
+       
+    public InvasioneAlieni(BufferedImage image, int numero, int attesa, GiocoProgetto main)
+    {
+        this.img_alieno = image;
+        this.attesa = attesa;
+        this.numero = numero;
+        this.main = main;
+        Alieni = new ArrayList();
+        rand = new Random();             
+    }
+    
+    
+    @Override
+    public void run()
+    {
+        Invasione = true;
+        while(Invasione)
+        {
+            for(int i =0; i<numero;i++)
+            {                
+                Alieni.add(new Alieno(img_alieno, 30, 30, rand.nextInt(main.getLarghezza()), -120, rand.nextInt(maxVel)+1, main));                                
+            }
+            try {
+                Thread.sleep(attesa);
+            } catch (Exception exc) {
+                Logger.getLogger(InvasioneAlieni.class.getName()).log(Level.SEVERE, null, exc);
+            }
+        }
+    }
+    
+    
+    public void disegna(Graphics g)
+    {
+        for(int i = 0;i<Alieni.size();i++)
+        {
+            Alieno alieno_temp = Alieni.get(i);
+            alieno_temp.disegna(g);                   
+        }            
+    } 
+    
+    
+    public ArrayList getAlieni()
+    {
+        return Alieni;
+    }
+    
+}
