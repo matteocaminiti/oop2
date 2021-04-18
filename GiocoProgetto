@@ -1,0 +1,234 @@
+package giocoprogetto;
+
+import java.awt.Canvas;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.image.BufferStrategy;
+import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.util.ArrayList;
+import javax.swing.JFrame;
+
+public class GiocoProgetto extends Canvas implements Runnable, KeyListener
+{
+    private static final int larghezza = 900;
+    private static final int altezza = 900;
+    private static final String nome_gioco = "Alien Invaders";
+        
+    BufferedImage sfondo = null;    
+    BufferedImage alieno_verde = null;    
+    BufferedImage nave_giocatore = null;
+    BufferedImage img_proiettile = null;
+        
+    private boolean giocoInEsecuzione = false;    
+    private InvasioneAlieni InvasioneAlieni; 
+    private Giocatore giocatore;
+    
+    
+    
+    
+    
+    
+    public static ArrayList<Proiettile> proiettili;
+    
+    
+    public GiocoProgetto() throws IOException
+    {
+        CaricaRisorse();
+        iniziaGioco();
+    } 
+                    
+    public static void main(String[] args) throws IOException 
+    {
+        GiocoProgetto gioco = new GiocoProgetto();
+        
+        JFrame finestra_gioco = new JFrame (nome_gioco);
+        
+        Dimension dimensione_finestra = new Dimension(larghezza, altezza);
+        finestra_gioco.setPreferredSize(dimensione_finestra);
+        finestra_gioco.setMaximumSize(dimensione_finestra);
+        finestra_gioco.setResizable(false);
+        
+        finestra_gioco.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        finestra_gioco.add(gioco);
+        finestra_gioco.addKeyListener(gioco);
+        finestra_gioco.pack();
+        finestra_gioco.setVisible(true);
+        
+        Thread thread_gioco = new Thread(gioco);
+        thread_gioco.start();
+    }
+    
+    private void iniziaGioco()
+    {      
+        InvasioneAlieni = new InvasioneAlieni(alieno_verde ,5,3000,this);            
+        InvasioneAlieni.start();        
+        giocatore = new Giocatore(nave_giocatore, img_proiettile ,60 ,60 ,380 ,720, this); 
+        
+    }
+    
+    private void CaricaRisorse() throws IOException
+    {
+        CaricatoreImmagini loader = new CaricatoreImmagini();
+        sfondo = loader.caricaImmagine("/immagini/sfondo.png");
+        alieno_verde = loader.caricaImmagine("/immagini/mostroverde.png");
+        nave_giocatore = loader.caricaImmagine("/immagini/giocatore.png");
+        img_proiettile =loader.caricaImmagine("/immagini/proiettile_giocatore.png");
+        
+        System.out.println("risorse caricate!");
+    }
+    
+    private void disegna()
+    {
+        BufferStrategy buffer = this.getBufferStrategy();
+        
+        if (buffer == null)
+        {
+            createBufferStrategy(2);
+            return;
+        }
+        
+        Graphics g = buffer.getDrawGraphics();        
+        g.drawImage(sfondo, 0, 0, altezza, larghezza, this);       
+        
+        InvasioneAlieni.disegna(g);
+        giocatore.disegna(g);
+                
+        g.setColor(Color.white);
+        g.drawString("Vita: "+giocatore.vita, 25, 25);
+        
+        g.setColor(Color.white);
+        g.drawString("Punteggio: "+giocatore.punteggio,25 ,40);
+        
+        if(!giocoInEsecuzione && Sconfitta())
+        {            
+            g.clearRect(360, 370, 150, 80);
+            g.setColor(Color.red);
+            g.drawString("SCONFITTA!!", 400, 420);
+        }
+        
+        if(!giocoInEsecuzione && Vittoria())
+        {
+            g.clearRect(360, 370, 150, 80);
+            g.setColor(Color.red);
+            g.drawString("VITTORIA!!", 400, 420);
+        }
+        
+        if(proiettili != null)
+        {
+            proiettili.forEach(p -> {
+                p.disegna(g);
+            });
+        }
+        g.dispose();
+        buffer.show();
+    }
+    private void aggiorna()
+    {
+        ArrayList<Alieno> Alieni = InvasioneAlieni.getAlieni();
+        ArrayList<Alieno> copy = new ArrayList<Alieno>(Alieni);
+         
+        for(Alieno alieno: copy)
+        {
+            if(GestoreCollisioni.controllaCollisione(giocatore, alieno))
+            {
+                Alieni.remove(alieno);
+                this.giocatore.vita -= 1;
+                this.giocatore.punteggio += 100;
+                break;
+            } 
+            
+                ArrayList<Proiettile> proiettili = getProiettili();
+                ArrayList<Proiettile> copia = new ArrayList<Proiettile>(proiettili);
+            
+           
+                for(Proiettile proiettile : copia)
+                {
+                    if(GestoreCollisioni.CollisioneProiettile(proiettile, alieno))
+                    {
+                        Alieni.remove(alieno);
+                        proiettili.remove(proiettile);
+                        this.giocatore.punteggio +=100;
+                        break;
+                    }
+                }
+            
+        }
+        
+        if(Sconfitta())
+        {
+            this.giocoInEsecuzione = false;
+            disegna();
+        }
+        if(Vittoria())
+        {
+            this.giocoInEsecuzione = false;
+            disegna();
+        }   
+    }
+    private boolean Vittoria()
+    {
+        if(giocatore.punteggio >= 2000)
+        {
+            return true;
+        }
+        return false;
+    }
+    private boolean Sconfitta()
+    {
+        if(giocatore.vita <= 0 )
+        {
+            return true;
+        }
+        return false;
+    }
+    @Override
+    public void run() 
+    {
+        giocoInEsecuzione = true;
+        while(giocoInEsecuzione)
+        {
+            aggiorna();
+            disegna();
+        }
+    }
+    
+    public int getLarghezza()
+    {
+        return larghezza;
+    }
+    public int getAltezza()
+    {
+        return altezza;
+    }
+    
+    public ArrayList getProiettili()
+    {
+        return proiettili;
+    }
+
+    
+    @Override
+    public void keyPressed(KeyEvent e) 
+    {
+        int keycode = e.getKeyCode();
+        switch(keycode)
+        {
+            case KeyEvent.VK_LEFT -> giocatore.spostaSinistra();
+            case KeyEvent.VK_RIGHT -> giocatore.spostaDestra();
+            case KeyEvent.VK_DOWN -> giocatore.spostaSotto();
+            case KeyEvent.VK_UP -> giocatore.spostaSopra();
+            case KeyEvent.VK_SPACE -> giocatore.spara();
+        }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {}
+
+    @Override
+    public void keyReleased(KeyEvent e) {}
+}
